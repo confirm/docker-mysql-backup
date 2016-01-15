@@ -13,12 +13,35 @@ The container will automatically detect the linked database container and tries 
 * `<CONTAINER>_ENV_MYSQL_DATABASE`
 * `<CONTAINER>_ENV_MYSQL_ROOT_PASSWORD`
 
-Please note the backup will be written to `/backup` by default, so you might want to mount that from your host.
+Please note the backup will be written to `/backup` by default, so you might want to mount that directory from your host.
 
-Here's an example of a Docker run:
+## Example Docker CLI client
+
+To create the backup container via `docker` CLI client you've to run:
 
 ```bash
 docker run --name my-backup --link my-mysql -v /var/mysql_backups:/backup -d confirm/mysql-backup
+```
+
+The container will stop automatically as soon as the backup has finished.
+To create more backups in the future simply start your container again:
+
+```bash
+docker start my-backup
+```
+
+## Example Docker Compose
+
+Here's an example of a [Docker Compose](https://docs.docker.com/compose/) file, e.g. `docker-compose.yml`:
+
+```yaml
+backup:
+    image: confirm/mysql-backup
+    volumes:
+        - ./data/backup:/backup
+    links:
+        - my-mysql
+    restart: never
 ```
 
 # Configuration
