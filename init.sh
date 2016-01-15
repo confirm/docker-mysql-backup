@@ -14,7 +14,7 @@ echo "  Location: ${BACKUP_DIR:=/backup}"
 echo "  Options:  ${BACKUP_OPTIONS:=-c}"
 echo
 
-CONTAINER=$(export | sed -nr "/ENV_MYSQL_DATABASE/{s/^.+ -x (.+)_ENV.+/\1/p}")
+CONTAINER=$(export | sed -nr "/ENV_MYSQL_DATABASE/{s/^.+ -x (.+)_ENV.+/\1/p}" | head -1)
 
 if [[ -z "${CONTAINER}" ]]
 then
