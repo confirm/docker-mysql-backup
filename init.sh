@@ -14,7 +14,7 @@ echo "  Location: ${BACKUP_DIR:=/backup}"
 echo "  Options:  ${BACKUP_OPTIONS:=-c}"
 echo
 
-CONTAINER=$(export | sed -nr "/ENV_MYSQL_DATABASE/{s/^.+ -x (.+)_ENV.+/\1/p}" | head -1)
+CONTAINER=$(export | sed -nr "/ENV_MYSQL_DATABASE/{s/^.+ -x (.+)_ENV.+/\1/p;q}")
 
 if [[ -z "${CONTAINER}" ]]
 then
@@ -24,7 +24,7 @@ then
     exit 1
 fi
 
-DB_PORT=$(export | sed -nr "/${CONTAINER}_PORT_[[:digit:]]+_TCP_PORT/{s/^.+ -x (.+)=.+/\1/p}")
+DB_PORT=$(export | sed -nr "/-x ${CONTAINER}_PORT_[[:digit:]]+_TCP_PORT/{s/^.+ -x (.+)=.+/\1/p}")
 DB_ADDR="${CONTAINER}_PORT_${!DB_PORT}_TCP_ADDR"
 DB_NAME="${CONTAINER}_ENV_MYSQL_DATABASE"
 DB_PASS="${CONTAINER}_ENV_MYSQL_ROOT_PASSWORD"
