@@ -11,8 +11,7 @@ To backup a [MySQL](https://hub.docker.com/_/mysql/) or [MariaDB](https://hub.do
 The container will automatically detect the linked database container and tries to backup the database based on the environment variables of the database container:
 
 * `<CONTAINER>_ENV_MYSQL_DATABASE`
-* `<CONTAINER>_ENV_MYSQL_USER`
-* `<CONTAINER>_ENV_MYSQL_PASSWORD`
+* `<CONTAINER>_ENV_MYSQL_ROOT_PASSWORD`
 
 Please note the backup will be written to `/backup` by default, so you might want to mount that from your host.
 
