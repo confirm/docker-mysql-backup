@@ -27,8 +27,7 @@ fi
 DB_PORT=$(export | sed -nr "/${CONTAINER}_PORT_[[:digit:]]+_TCP_PORT/{s/^.+ -x (.+)=.+/\1/p}")
 DB_ADDR="${CONTAINER}_PORT_${!DB_PORT}_TCP_ADDR"
 DB_NAME="${CONTAINER}_ENV_MYSQL_DATABASE"
-DB_USER="${CONTAINER}_ENV_MYSQL_USER"
-DB_PASS="${CONTAINER}_ENV_MYSQL_PASSWORD"
+DB_PASS="${CONTAINER}_ENV_MYSQL_ROOT_PASSWORD"
 
 echo "CONTAINER SETTINGS"
 echo "=================="
@@ -48,4 +47,4 @@ mkdir -p ${BACKUP_DIR}
 chown ${BACKUP_USER}: ${BACKUP_DIR}
 cd ${BACKUP_DIR}
 
-su -pc "mydumper -h ${!DB_ADDR} -P ${!DB_PORT} -u ${!DB_USER} -p ${!DB_PASS} -B ${!DB_NAME} ${BACKUP_OPTIONS}" ${BACKUP_USER}
+su -pc "mydumper -h ${!DB_ADDR} -P ${!DB_PORT} -u root -p ${!DB_PASS} -B ${!DB_NAME} ${BACKUP_OPTIONS}" ${BACKUP_USER}
