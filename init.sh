@@ -47,4 +47,6 @@ mkdir -p ${BACKUP_DIR}
 chown ${BACKUP_USER}: ${BACKUP_DIR}
 cd ${BACKUP_DIR}
 
+echo "STARTING BACKUP..."
 exec su -pc "mydumper -h ${!DB_ADDR} -P ${!DB_PORT} -u root -p ${!DB_PASS} -B ${!DB_NAME} ${BACKUP_OPTIONS}" ${BACKUP_USER}
+echo "DONE!"
