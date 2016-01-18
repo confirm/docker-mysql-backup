@@ -37,4 +37,4 @@ WORKDIR /backup
 # Start process.
 #
 
-CMD /init.sh
+CMD ["/init.sh"]
