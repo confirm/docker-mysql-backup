@@ -47,7 +47,7 @@ echo
 # Display the container informations on standard out.
 #
 
-CONTAINER=$(export | sed -nr "/ENV_MYSQL_DATABASE/{s/^.+ -x (.+)_ENV.+/\1/p;q}")
+CONTAINER=$(export | sed -nr "/ENV_MYSQL_ROOT_PASSWORD/{s/^.+ -x (.+)_ENV.+/\1/p;q}")
 
 if [[ -z "${CONTAINER}" ]]
 then
@@ -86,7 +86,14 @@ umask ${UMASK}
 # Building common CLI options to use for mydumper and myloader.
 #
 
-CLI_OPTIONS="-v 3 -h ${!DB_ADDR} -P ${!DB_PORT} -u root -p ${!DB_PASS} -B ${!DB_NAME} ${OPTIONS}"
+CLI_OPTIONS="-v 3 -h ${!DB_ADDR} -P ${!DB_PORT} -u root -p ${!DB_PASS} ${OPTIONS}"
+
+if [ -z "${!DB_NAME}" ]; then
+  echo "No DB_NAME available, backup all DBs"
+else
+  CLI_OPTIONS="-B ${!DB_NAME} ${CLI_OPTIONS}"
+fi
+
 
 #
 # When MODE is set to "BACKUP", then mydumper has to be used to backup the database.
