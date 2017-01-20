@@ -2,7 +2,7 @@
 set -e
 
 #
-# Retreive and check mode, which can either be "BACKUP" or "RESTORE".
+# Retreive and check mode, which can either be "BACKUP", "COMPRESSED_BACKUP" or "RESTORE".
 # Based on the mode, different default options will be set.
 #
 
@@ -10,6 +10,9 @@ MODE=${MODE:-BACKUP}
  
 case "${MODE^^}" in
     'BACKUP')
+        OPTIONS=${OPTIONS:-}
+        ;;
+    'COMPRESSED_BACKUP')
         OPTIONS=${OPTIONS:--c}
         ;;
     'RESTORE')
@@ -47,7 +50,7 @@ echo
 # Display the container informations on standard out.
 #
 
-CONTAINER=$(export | sed -nr "/ENV_MYSQL_DATABASE/{s/^.+ -x (.+)_ENV.+/\1/p;q}")
+CONTAINER=$(export | sed -nr "/ENV_MYSQL_ROOT_PASSWORD/{s/^.+ -x (.+)_ENV.+/\1/p;q}")
 
 if [[ -z "${CONTAINER}" ]]
 then
@@ -86,7 +89,23 @@ umask ${UMASK}
 # Building common CLI options to use for mydumper and myloader.
 #
 
-CLI_OPTIONS="-v 3 -h ${!DB_ADDR} -P ${!DB_PORT} -u root -p ${!DB_PASS} -B ${!DB_NAME} ${OPTIONS}"
+CLI_OPTIONS="-v 3 -h ${!DB_ADDR} -P ${!DB_PORT} -u root -p ${!DB_PASS} ${OPTIONS}"
+
+if [ -z "${!DB_NAME}" ]; then
+  echo "No DB_NAME available, backup all DBs"
+else
+  CLI_OPTIONS="-B ${!DB_NAME} ${CLI_OPTIONS}"
+fi
+
+#
+# Call before hooks
+#
+if [ -d "/hooks" ] && ls /hooks/*.before 1> /dev/null 2>&1; then
+  for hookfile in /hooks/*.before; do
+    eval $hookfile
+    echo "Called hook $hookfile"
+  done
+fi
 
 #
 # When MODE is set to "BACKUP", then mydumper has to be used to backup the database.
@@ -96,7 +115,7 @@ echo "${MODE^^}"
 echo "======="
 echo
 
-if [[ "${MODE^^}" == "BACKUP" ]]
+if [[ "${MODE^^}" == "BACKUP" ]] || [[ "${MODE^^}" == "COMPRESSED_BACKUP" ]]
 then
 
     printf "===> Creating base directory... "
@@ -112,7 +131,7 @@ then
     echo "DONE"
 
     echo "===> Starting backup..."
-    exec su -pc "mydumper ${CLI_OPTIONS}" ${USER}
+    sudo -u ${USER} mydumper ${CLI_OPTIONS}
 
 #
 # When MODE is set to "RESTORE", then myloader has to be used to restore the database.
@@ -140,6 +159,24 @@ then
     fi
 
     echo "===> Restoring database from ${RESTORE_DIR}..."
-    exec su -pc "myloader --directory=${RESTORE_DIR} ${CLI_OPTIONS}" ${USER}
+    sudo -u ${USER} myloader --directory=${RESTORE_DIR} ${CLI_OPTIONS}
 
 fi
+
+echo "===> Backup finished"
+
+#
+# Call after hooks
+#
+if [ -d "/hooks" ] && ls /hooks/*.after 1> /dev/null 2>&1; then
+  for hookfile in /hooks/*.after; do
+    echo "===> Calling hook ${hookfile}... "
+    eval $hookfile
+    echo "===> Calling hook ${hookfile}... DONE"
+  done
+
+  echo "===> All hooks processed, finished."
+else
+  echo "===> No hooks found, finished."
+fi
+
