@@ -2,7 +2,7 @@
 set -e
 
 #
-# Retreive and check mode, which can either be "BACKUP" or "RESTORE".
+# Retreive and check mode, which can either be "BACKUP", "COMPRESSED_BACKUP" or "RESTORE".
 # Based on the mode, different default options will be set.
 #
 
@@ -10,6 +10,9 @@ MODE=${MODE:-BACKUP}
  
 case "${MODE^^}" in
     'BACKUP')
+        OPTIONS=${OPTIONS:-}
+        ;;
+    'COMPRESSED_BACKUP')
         OPTIONS=${OPTIONS:--c}
         ;;
     'RESTORE')
@@ -103,7 +106,7 @@ echo "${MODE^^}"
 echo "======="
 echo
 
-if [[ "${MODE^^}" == "BACKUP" ]]
+if [[ "${MODE^^}" == "BACKUP" ]] || [[ "${MODE^^}" == "COMPRESSED_BACKUP" ]]
 then
 
     printf "===> Creating base directory... "
