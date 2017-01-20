@@ -97,6 +97,15 @@ else
   CLI_OPTIONS="-B ${!DB_NAME} ${CLI_OPTIONS}"
 fi
 
+#
+# Call before hooks
+#
+if [ -d "/hooks" ] && ls /hooks/*.before 1> /dev/null 2>&1; then
+  for hookfile in /hooks/*.before; do
+    eval $hookfile
+    echo "Called hook $hookfile"
+  done
+fi
 
 #
 # When MODE is set to "BACKUP", then mydumper has to be used to backup the database.
@@ -122,7 +131,7 @@ then
     echo "DONE"
 
     echo "===> Starting backup..."
-    exec su -pc "mydumper ${CLI_OPTIONS}" ${USER}
+    sudo -u ${USER} mydumper ${CLI_OPTIONS}
 
 #
 # When MODE is set to "RESTORE", then myloader has to be used to restore the database.
@@ -150,6 +159,24 @@ then
     fi
 
     echo "===> Restoring database from ${RESTORE_DIR}..."
-    exec su -pc "myloader --directory=${RESTORE_DIR} ${CLI_OPTIONS}" ${USER}
+    sudo -u ${USER} myloader --directory=${RESTORE_DIR} ${CLI_OPTIONS}
 
 fi
+
+echo "===> Backup finished"
+
+#
+# Call after hooks
+#
+if [ -d "/hooks" ] && ls /hooks/*.after 1> /dev/null 2>&1; then
+  for hookfile in /hooks/*.after; do
+    echo "===> Calling hook ${hookfile}... "
+    eval $hookfile
+    echo "===> Calling hook ${hookfile}... DONE"
+  done
+
+  echo "===> All hooks processed, finished."
+else
+  echo "===> No hooks found, finished."
+fi
+
