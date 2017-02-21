@@ -7,10 +7,16 @@ set -e
 #
 
 MODE=${MODE:-BACKUP}
+TARBALL=${TARBALL:-}
  
 case "${MODE^^}" in
     'BACKUP')
-        OPTIONS=${OPTIONS:--c}
+        if [[ "${TARBALL^^}" != "" ]]
+        then
+            OPTIONS="--outputdir=${TARBALL}"
+        else
+            OPTIONS=${OPTIONS:--c}
+        fi
         ;;
     'RESTORE')
         OPTIONS=${OPTIONS:--o}
@@ -85,6 +91,7 @@ umask ${UMASK}
 #
 # Building common CLI options to use for mydumper and myloader.
 #
+#
 
 CLI_OPTIONS="-v 3 -h ${!DB_ADDR} -P ${!DB_PORT} -u root -p ${!DB_PASS} -B ${!DB_NAME} ${OPTIONS}"
 
@@ -112,7 +119,12 @@ then
     echo "DONE"
 
     echo "===> Starting backup..."
-    exec su -pc "mydumper ${CLI_OPTIONS}" ${USER}
+    if [[ "${TARBALL^^}" != "" ]]
+    then
+        exec su -pc "mydumper ${CLI_OPTIONS} && tar -czvf ${TARBALL}.gz ${TARBALL}" ${USER}
+    else
+        exec su -pc "mydumper ${CLI_OPTIONS}" ${USER}
+    fi
 
 #
 # When MODE is set to "RESTORE", then myloader has to be used to restore the database.
@@ -125,21 +137,27 @@ then
     cd ${BASE_DIR}
     echo "DONE"
 
-    if [[ -z "${RESTORE_DIR}" ]]
+    if [[ "${TARBALL^^}" != "" ]]
     then
-        printf "===> No RESTORE_DIR set, trying to find latest backup... "
-        RESTORE_DIR=$(ls -t | head -1)
-        if [[ -n "${RESTORE_DIR}" ]]
+        RESTORE_DIR=${TARBALL}
+        rm -rf ${RESTORE_DIR}
+        echo "===> Restoring database from ${RESTORE_DIR}..."
+        exec su -pc "tar -xvf ${TARBALL}.gz ${RESTORE_DIR} && myloader --directory=${RESTORE_DIR} ${CLI_OPTIONS}" ${USER}
+    else
+        if [[ -z "${RESTORE_DIR}" ]]
         then
-            echo "DONE"
-        else
-            echo "FAILED"
-            echo "ERROR: Auto detection of latest backup directory failed!" >&2
-            exit 1
+            printf "===> No RESTORE_DIR set, trying to find latest backup... "
+            RESTORE_DIR=$(ls -t | head -1)
+            if [[ -n "${RESTORE_DIR}" ]]
+            then
+                echo "DONE"
+            else
+                echo "FAILED"
+                echo "ERROR: Auto detection of latest backup directory failed!" >&2
+                exit 1
+            fi
         fi
+        echo "===> Restoring database from ${RESTORE_DIR}..."
+        exec su -pc "myloader --directory=${RESTORE_DIR} ${CLI_OPTIONS}" ${USER}
     fi
-
-    echo "===> Restoring database from ${RESTORE_DIR}..."
-    exec su -pc "myloader --directory=${RESTORE_DIR} ${CLI_OPTIONS}" ${USER}
-
 fi
