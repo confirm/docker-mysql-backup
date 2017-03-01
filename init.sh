@@ -8,7 +8,7 @@ set -e
 
 MODE=${MODE:-BACKUP}
 TARBALL=${TARBALL:-}
- 
+
 case "${MODE^^}" in
     'BACKUP')
         if [[ "${TARBALL^^}" != "" ]]
@@ -121,7 +121,7 @@ then
     echo "===> Starting backup..."
     if [[ "${TARBALL^^}" != "" ]]
     then
-        exec su -pc "mydumper ${CLI_OPTIONS} && tar -czvf ${TARBALL}.gz ${TARBALL}" ${USER}
+        exec su -pc "mydumper ${CLI_OPTIONS} && tar -czvf ${TARBALL}.tgz ${TARBALL} && rm -rf ${TARBALL}" ${USER}
     else
         exec su -pc "mydumper ${CLI_OPTIONS}" ${USER}
     fi
@@ -142,7 +142,7 @@ then
         RESTORE_DIR=${TARBALL}
         rm -rf ${RESTORE_DIR}
         echo "===> Restoring database from ${RESTORE_DIR}..."
-        exec su -pc "tar -xvf ${TARBALL}.gz ${RESTORE_DIR} && myloader --directory=${RESTORE_DIR} ${CLI_OPTIONS}" ${USER}
+        exec su -pc "tar -xvf ${TARBALL}.tgz ${RESTORE_DIR} && myloader --directory=${RESTORE_DIR} ${CLI_OPTIONS}" ${USER}
     else
         if [[ -z "${RESTORE_DIR}" ]]
         then
