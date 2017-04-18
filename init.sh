@@ -53,7 +53,7 @@ echo
 # Display the container informations on standard out.
 #
 
-CONTAINER=$(export | sed -nr "/ENV_MYSQL_DATABASE/{s/^.+ -x (.+)_ENV.+/\1/p;q}")
+CONTAINER=$(export | sed -nr "/ENV_MYSQL_ROOT_PASSWORD/{s/^.+ -x (.+)_ENV.+/\1/p;q}")
 
 if [[ -z "${CONTAINER}" ]]
 then
@@ -76,8 +76,12 @@ echo
 echo "  Address:   ${!DB_ADDR}"
 echo "  Port:      ${!DB_PORT}"
 echo
-echo "  Database:  ${!DB_NAME}"
-echo
+
+if [[ -n "${!DB_NAME}" ]]
+then
+    echo "  Database:  ${!DB_NAME}"
+    echo
+fi
 
 #
 # Change UID / GID of backup user and settings umask.
@@ -93,7 +97,14 @@ umask ${UMASK}
 #
 #
 
-CLI_OPTIONS="-v 3 -h ${!DB_ADDR} -P ${!DB_PORT} -u root -p ${!DB_PASS} -B ${!DB_NAME} ${OPTIONS}"
+CLI_OPTIONS="-v 3 -h ${!DB_ADDR} -P ${!DB_PORT} -u root -p ${!DB_PASS}" 
+
+if [[ -n "${!DB_NAME}" ]]
+then
+    CLI_OPTIONS+=" -B ${!DB_NAME}"
+fi
+
+CLI_OPTIONS+=" ${OPTIONS}"
 
 #
 # When MODE is set to "BACKUP", then mydumper has to be used to backup the database.
