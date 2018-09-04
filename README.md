@@ -51,7 +51,7 @@ backup:
         - ./data/backup:/backup
     links:
         - my-mysql
-    restart: never
+    restart: "no"
 ```
 
 Configuration
