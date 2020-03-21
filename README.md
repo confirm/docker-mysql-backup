@@ -36,7 +36,7 @@ docker start my-backup
 To __restore a backup__ into a MySQL container via `docker` CLI client:
 
 ```bash
-docker run --name my-restore --link my-mysql -v /var/mysql_backups:/backup confirm/mysql-backup
+docker run --name my-restore --link my-mysql -e MODE=RESTORE -v /var/mysql_backups:/backup confirm/mysql-backup
 ```
 
 Example Docker Compose
